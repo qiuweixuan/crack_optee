@@ -3,6 +3,7 @@
 #include "crypt_alg.h"
 
 #include <memory.h>
+#include <memory>
 #include <cstdio>
 // 静态变量
 static uint8_t string_for_ssk_gen[] = "ONLY_FOR_tee_fs_ssk";
@@ -36,7 +37,7 @@ void crack::generate_key::tee_otp_get_die_id(uint8_t *buffer, std::size_t len)
  *@brief 获取安全存储密钥SSK
  */
 
-void crack::generate_key::tee_fs_init_key_manager()
+void crack::generate_key::tee_fs_init_key_manager(crack::tee_key::tee_fs_ssk& tee_fs_ssk)
 {
 	struct crack::tee_key::tee_hw_unique_key huk;
 	uint8_t chip_id[crack::tee_key::TEE_FS_KM_CHIP_ID_LENGTH];
@@ -64,12 +65,14 @@ void crack::generate_key::tee_fs_init_key_manager()
 
 
 	// 使用hmac_sha256计算安全存储密钥SSK
-	crack::tee_key::tee_fs_ssk tee_fs_ssk;
+	// crack::tee_key::tee_fs_ssk tee_fs_ssk;
+	
+
 	crack::crypt_alg::hmac_sha256( tee_fs_ssk.key, sizeof(tee_fs_ssk.key),
 			huk.data, sizeof(huk.data),
 			message, sizeof(message));
 	// 打印SSK信息
 	crack::print_fs::print_ssk(tee_fs_ssk);
 
-	return;
+	return ;
 }

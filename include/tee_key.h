@@ -2,7 +2,7 @@
 #define TEE_KEY_H
 
 #include <stdint.h>
-
+#include <vector>
 namespace crack
 {
     namespace tee_key

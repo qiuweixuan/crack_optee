@@ -15,11 +15,7 @@ namespace crack
         void tee_otp_get_die_id(uint8_t *buffer, size_t len);
 
         // 初始化key_manager -> 获取ssk
-        void tee_fs_init_key_manager();
-
-        
-
-
+        void  tee_fs_init_key_manager(crack::tee_key::tee_fs_ssk& tee_fs_ssk);
 
     } // namespace generate_key
 } // namespace crack
