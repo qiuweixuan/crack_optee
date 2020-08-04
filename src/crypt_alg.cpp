@@ -37,3 +37,35 @@ std::string crack::crypt_alg::hmac_sha256(const std::string &key, const std::str
 #endif
 	return hash;
 }
+
+
+/**
+ *@brief hmac_sha256加密算法实现
+ *@param hash 存储32字节的hmac_sha256哈希值
+ *@param key 密钥
+ *@param key_len 密钥长度
+ *@param data 数据
+ *@param data_len 数据长度
+ */
+void crack::crypt_alg::hmac_sha256(uint8_t *hash, uint32_t hash_len, uint8_t *key, const uint32_t key_len, uint8_t *data, const uint32_t data_len)
+{
+	
+#if (OPENSSL_VERSION_NUMBER >= 0x10100001L)     
+	HMAC_CTX *ctx;
+
+	ctx = HMAC_CTX_new();
+	HMAC_Init_ex(ctx, key, key_len, EVP_sha256(), NULL);
+	HMAC_Update(ctx, data, data_len);
+	HMAC_Final(ctx, hash, &hash_len);
+	HMAC_CTX_free(ctx);
+#else
+	HMAC_CTX ctx;
+
+	HMAC_CTX_init(&ctx);
+  HMAC_Init_ex(&ctx, key, key_len, EVP_sha256(), NULL);
+	HMAC_Update(&ctx, data, data_len);
+	HMAC_Final(&ctx, hash, &hash_len);
+  HMAC_CTX_cleanup(&ctx);
+#endif
+    
+}

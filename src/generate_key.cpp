@@ -1,30 +1,75 @@
 #include "generate_key.h"
+#include "print_fs.h"
+#include "crypt_alg.h"
+
 #include <memory.h>
 #include <cstdio>
+// 静态变量
+static uint8_t string_for_ssk_gen[] = "ONLY_FOR_tee_fs_ssk";
+/**
+ *@brief 获取硬件根密钥HUK常量
+ *@param hwkey 需要初始化的硬件密钥
+ */
 
-void crack::generate_key::tee_otp_get_hw_unique_key(struct crack::tee_key::tee_hw_unique_key *hwkey) {
-    memset(&hwkey->data[0], 0, sizeof(hwkey->data));
+void crack::generate_key::tee_otp_get_hw_unique_key(struct crack::tee_key::tee_hw_unique_key *hwkey)
+{
+	memset(&hwkey->data[0], 0, sizeof(hwkey->data));
 }
 
+/**
+ *@brief 获取芯片ID常量
+ *@param buffer 芯片ID缓冲区
+ *@param len 缓冲区长度
+ */
+void crack::generate_key::tee_otp_get_die_id(uint8_t *buffer, std::size_t len)
+{
+	static const char pattern[4] = {'B', 'E', 'E', 'F'};
+	size_t i;
 
-void crack::generate_key::tee_fs_init_key_manager() {
-    struct crack::tee_key::tee_hw_unique_key huk;
-	// uint8_t chip_id[crack::tee_key::TEE_FS_KM_CHIP_ID_LENGTH];
-	
-	// uint8_t message[sizeof(chip_id) + sizeof(string_for_ssk_gen)];
+	for (i = 0; i < len; i++)
+	{
+		buffer[i] = pattern[i % 4];
+	}
+}
+
+/**
+ *@brief 获取安全存储密钥SSK
+ */
+
+void crack::generate_key::tee_fs_init_key_manager()
+{
+	struct crack::tee_key::tee_hw_unique_key huk;
+	uint8_t chip_id[crack::tee_key::TEE_FS_KM_CHIP_ID_LENGTH];
+	uint8_t message[sizeof(chip_id) + sizeof(string_for_ssk_gen)];
 
 	/* Secure Storage Key Generation:
 	 *
 	 *     SSK = HMAC(HUK, message)
 	 *     message := concatenate(chip_id, static string)
 	 * */
+	// 获取huk
 	crack::generate_key::tee_otp_get_hw_unique_key(&huk);
+	// 打印huk信息
+	crack::print_fs::print_huk(huk);
 
-    printf("HUK: ");
-	for(size_t i = 0; i < sizeof(huk.data); i++)
-	{
-		printf(" %0x ", huk.data[i]);
-	}
-    printf("\n");
-    return;
+	// 获取芯片ID
+	crack::generate_key::tee_otp_get_die_id(chip_id, sizeof(chip_id));
+
+	// 字符串拼接
+	memcpy(message, chip_id, sizeof(chip_id));
+	memcpy(message + sizeof(chip_id), string_for_ssk_gen,
+			sizeof(string_for_ssk_gen));
+	// 输出拼接后的字符串
+	crack::print_fs::print_string_for_ssk_gen(message,sizeof(message));
+
+
+	// 使用hmac_sha256计算安全存储密钥SSK
+	crack::tee_key::tee_fs_ssk tee_fs_ssk;
+	crack::crypt_alg::hmac_sha256( tee_fs_ssk.key, sizeof(tee_fs_ssk.key),
+			huk.data, sizeof(huk.data),
+			message, sizeof(message));
+	// 打印SSK信息
+	crack::print_fs::print_ssk(tee_fs_ssk);
+
+	return;
 }
