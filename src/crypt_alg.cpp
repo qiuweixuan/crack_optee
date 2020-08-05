@@ -1,6 +1,8 @@
 #include "crypt_alg.h"
 #include <openssl/hmac.h>
+#include <openssl/aes.h>
 #include <string>
+#include <memory.h>
 
 /**
  *@brief hmac_sha256哈希算法实现
@@ -68,4 +70,59 @@ void crack::crypt_alg::hmac_sha256(uint8_t *hash, uint32_t hash_len, const uint8
   HMAC_CTX_cleanup(&ctx);
 #endif
     
+}
+
+
+/**
+ *@brief AES算法的ECB模式解密算法实现
+ *@param in 要解密的数据
+ *@param out 解密后的数据
+ *@param userKey 用户密钥
+ *@param length 要解密的数据的字节数
+ */
+int aes_ecb_decrypt(const unsigned char *in, unsigned char *out, const unsigned char *userKey, const int length, const int keySize)
+{
+	if (!in || !userKey || !out)
+		return -1;
+	
+	AES_KEY akey;
+	//! 1. 设定AES加密用的key及密钥长度
+	memset(&akey, 0, sizeof(AES_KEY));
+	
+	/* if (AES_set_encrypt_key(userKey, 128, &akey) < 0)
+	{
+		printf("ecb: AES_set_encrypt_key failed!\n");
+		return -1;
+	} */
+	memset(&akey, 0, sizeof(AES_KEY));
+	if(keySize == 128) 
+	{
+		if(AES_set_decrypt_key(userKey, 128, &akey) < 0) 
+		{
+			printf("cbc: AES_set_encrypt_key failed!\n");
+			return -1;
+		}
+	}
+	else if (keySize == 256) 
+	{
+		if(AES_set_decrypt_key(userKey, 256, &akey) < 0) 
+		{
+			printf("cbc: AES_set_encrypt_key failed!\n");
+			return -1;
+		}
+	}
+	else
+	{
+		printf("keySize = %d is error!\n", keySize);
+		return -1;
+	}
+	
+	int len = 0;
+	//! 2. 一次加密一个AES块
+	while(len < length)
+	{
+		AES_ecb_encrypt(in + len, out + len, &akey, AES_DECRYPT);
+		len += 16;
+	}
+	return 0;
 }

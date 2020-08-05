@@ -4,11 +4,14 @@
 #include "tee_key.h"
 #include <cstdio>
 #include <string>
+#include <memory>
 
 namespace crack
 {
     namespace generate_key
     {
+
+        using TEE_FS_TSK_PTR_TYPE = std::unique_ptr<crack::tee_key::tee_fs_ssk>;
         // 获取HUK
         void tee_otp_get_hw_unique_key(struct crack::tee_key::tee_hw_unique_key *hwkey);
 
@@ -17,6 +20,8 @@ namespace crack
 
         // 初始化key_manager -> 获取SSK
         void  tee_fs_init_key_manager(crack::tee_key::tee_fs_ssk& tee_fs_ssk);
+
+        TEE_FS_TSK_PTR_TYPE  tee_fs_init_key_manager();
 
         // 获取TSK
         void tee_fs_init_tsk(crack::tee_key::tee_fs_tsk& tee_fs_tsk, crack::tee_key::tee_fs_ssk& tee_fs_ssk, std::string& uuid);

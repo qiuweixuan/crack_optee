@@ -8,7 +8,10 @@ namespace crack
 {
     namespace crack_fs
     {
-        void crack_dirfdb(const std::string& storage_dir, crack::tee_key::tee_fs_ssk& tee_fs_ssk);
+        void crack_dirfdb(const char* storage_dir, crack::tee_key::tee_fs_ssk& tee_fs_ssk);
+
+        static int get_idx_from_counter(uint32_t counter0, uint32_t counter1);
+    
     }
 } // namespace crack
 
