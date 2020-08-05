@@ -14,6 +14,7 @@ namespace crack
 
         void print_ssk(const crack::tee_key::tee_fs_ssk& tee_fs_ssk);
         
+        void print_tsk(const crack::tee_key::tee_fs_tsk& tee_fs_tsk);
     }
 } // namespace crack
 

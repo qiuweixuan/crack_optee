@@ -47,7 +47,7 @@ std::string crack::crypt_alg::hmac_sha256(const std::string &key, const std::str
  *@param data 数据
  *@param data_len 数据长度
  */
-void crack::crypt_alg::hmac_sha256(uint8_t *hash, uint32_t hash_len, uint8_t *key, const uint32_t key_len, uint8_t *data, const uint32_t data_len)
+void crack::crypt_alg::hmac_sha256(uint8_t *hash, uint32_t hash_len, const uint8_t *key, const uint32_t key_len,const  uint8_t *data, const uint32_t data_len)
 {
 	
 #if (OPENSSL_VERSION_NUMBER >= 0x10100001L)     

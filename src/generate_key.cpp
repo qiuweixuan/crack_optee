@@ -76,3 +76,16 @@ void crack::generate_key::tee_fs_init_key_manager(crack::tee_key::tee_fs_ssk& te
 
 	return ;
 }
+
+/**
+ *@brief 获取可信应用存储密钥TSK
+ *@param tee_fs_tsk 可信应用相应存储文件的密钥TSK
+ *@param tee_fs_ssk 整个安全存储文件的密钥SSK
+ *@param uuid 可信应用UUID
+ */
+
+void crack::generate_key::tee_fs_init_tsk(crack::tee_key::tee_fs_tsk& tee_fs_tsk, crack::tee_key::tee_fs_ssk& tee_fs_ssk, std::string& uuid){
+	crack::crypt_alg::hmac_sha256( tee_fs_tsk.key, sizeof(tee_fs_tsk.key),
+			tee_fs_ssk.key, sizeof(tee_fs_ssk.key),
+			(const  uint8_t *)uuid.c_str(), (const uint32_t)uuid.size());
+ }

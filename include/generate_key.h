@@ -3,6 +3,7 @@
 
 #include "tee_key.h"
 #include <cstdio>
+#include <string>
 
 namespace crack
 {
@@ -14,8 +15,11 @@ namespace crack
         // 获取芯片ID
         void tee_otp_get_die_id(uint8_t *buffer, size_t len);
 
-        // 初始化key_manager -> 获取ssk
+        // 初始化key_manager -> 获取SSK
         void  tee_fs_init_key_manager(crack::tee_key::tee_fs_ssk& tee_fs_ssk);
+
+        // 获取TSK
+        void tee_fs_init_tsk(crack::tee_key::tee_fs_tsk& tee_fs_tsk, crack::tee_key::tee_fs_ssk& tee_fs_ssk, std::string& uuid);
 
     } // namespace generate_key
 } // namespace crack

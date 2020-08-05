@@ -34,6 +34,19 @@ namespace crack
         // 芯片ID长度
         const uint32_t  TEE_FS_KM_CHIP_ID_LENGTH = 32;
 
+        // tee SSK 长度
+        const uint32_t TEE_FS_KM_TSK_SIZE = 32;
+
+        /**
+         * @brief tee SSK 结构体
+         * @property key SSK数据
+         */
+        struct tee_fs_tsk
+        {
+            uint8_t key[TEE_FS_KM_TSK_SIZE];
+        };
+
+
     } // namespace tee_key
 } // namespace crack
 
