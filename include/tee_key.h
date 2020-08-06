@@ -46,6 +46,18 @@ namespace crack
             uint8_t key[TEE_FS_KM_TSK_SIZE];
         };
 
+        // tee FEK 长度
+        const uint32_t TEE_FS_KM_FEK_SIZE = 16;
+
+        /**
+         * @brief tee FEK 结构体
+         * @property key FEK数据
+         */
+        struct tee_fs_fek
+        {
+            uint8_t key[TEE_FS_KM_FEK_SIZE];
+        };
+
     
 
 

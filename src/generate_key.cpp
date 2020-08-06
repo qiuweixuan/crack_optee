@@ -135,3 +135,8 @@ void crack::generate_key::tee_fs_init_tsk(crack::tee_key::tee_fs_tsk& tee_fs_tsk
 			tee_fs_ssk.key, sizeof(tee_fs_ssk.key),
 			(const  uint8_t *)uuid.c_str(), (const uint32_t)uuid.size());
  }
+
+ void crack::generate_key::tee_fs_init_fek(crack::tee_key::tee_fs_fek& tee_fs_fek, crack::tee_key::tee_fs_tsk& tee_fs_tsk, crack::tee_fs_htree::tee_fs_htree_image& image){
+	const uint32_t key_size = sizeof(tee_fs_tsk.key) * 8;
+	crack::crypt_alg::aes_ecb_decrypt(tee_fs_fek.key,tee_fs_tsk.key, key_size, image.enc_fek, sizeof(image.enc_fek));
+ }

@@ -37,3 +37,12 @@ void crack::print_fs::print_tsk(const crack::tee_key::tee_fs_tsk& tee_fs_tsk) {
     }
     printf("\n");
 }
+
+void crack::print_fs::print_fek(const crack::tee_key::tee_fs_fek& tee_fs_fek) {
+    printf("FEK: ");
+    for (size_t i = 0; i < sizeof(tee_fs_fek.key); i++)
+    {
+        printf(" %0x ", tee_fs_fek.key[i]);
+    }
+    printf("\n");
+}

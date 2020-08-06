@@ -2,6 +2,7 @@
 #define GENERATE_KEY_H
 
 #include "tee_key.h"
+#include "tee_fs_htree.h"
 #include <cstdio>
 #include <string>
 #include <memory>
@@ -25,6 +26,9 @@ namespace crack
 
         // 获取TSK
         void tee_fs_init_tsk(crack::tee_key::tee_fs_tsk& tee_fs_tsk, crack::tee_key::tee_fs_ssk& tee_fs_ssk, std::string& uuid);
+
+         // 获取FEK
+        void tee_fs_init_fek(crack::tee_key::tee_fs_fek& tee_fs_fek, crack::tee_key::tee_fs_tsk& tee_fs_tsk, crack::tee_fs_htree::tee_fs_htree_image& image);
 
     } // namespace generate_key
 } // namespace crack

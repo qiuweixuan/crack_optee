@@ -78,22 +78,16 @@ void crack::crypt_alg::hmac_sha256(uint8_t *hash, uint32_t hash_len, const uint8
  *@param in 要解密的数据
  *@param out 解密后的数据
  *@param userKey 用户密钥
+ *@param keySize 密钥长度，决定ECB模式
  *@param length 要解密的数据的字节数
  */
-int aes_ecb_decrypt(const unsigned char *in, unsigned char *out, const unsigned char *userKey, const int length, const int keySize)
+int crack::crypt_alg::aes_ecb_decrypt(uint8_t *out, const uint8_t *userKey, const uint32_t keySize, const uint8_t *in,  const uint32_t length)
 {
 	if (!in || !userKey || !out)
 		return -1;
 	
 	AES_KEY akey;
 	//! 1. 设定AES加密用的key及密钥长度
-	memset(&akey, 0, sizeof(AES_KEY));
-	
-	/* if (AES_set_encrypt_key(userKey, 128, &akey) < 0)
-	{
-		printf("ecb: AES_set_encrypt_key failed!\n");
-		return -1;
-	} */
 	memset(&akey, 0, sizeof(AES_KEY));
 	if(keySize == 128) 
 	{
