@@ -9,11 +9,13 @@ namespace crack
 {
     namespace crack_fs
     {
+
+      
         void crack_dirfdb(std::string& storage_dir, crack::tee_key::tee_fs_ssk& tee_fs_ssk);
 
-        static int get_idx_from_counter(uint32_t counter0, uint32_t counter1);
+        
 
-        static crack::read_fs::TEE_FS_HTREE_IMAGE_PTR get_dirfdb_htree_image(int fd,int& vers);
+        static crack::tee_fs_htree::TEE_FS_HTREE_IMETA_PTR  decrypt_imeta(crack::tee_key::tee_fs_fek& fek, crack::tee_fs_htree::tee_fs_htree_image& image,crack::tee_fs_htree::tee_fs_htree_node_image& node_image);
     }
 } // namespace crack
 

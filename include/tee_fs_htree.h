@@ -2,19 +2,19 @@
 #define TEE_FS_HTREE_H
 
 #include <stdint.h>
+#include <memory>
 
 namespace crack
 {
     namespace tee_fs_htree
     {
-
+        /* 常量设置 */
         const uint32_t TEE_FS_HTREE_IV_SIZE = 16;
         const uint32_t TEE_FS_HTREE_FEK_SIZE = 16;
         const uint32_t TEE_FS_HTREE_TAG_SIZE = 16;
         const uint32_t TEE_FS_HTREE_HASH_SIZE = 32;
         const uint32_t BLOCK_SIZE = 4096;
-
-
+        const uint32_t TEE_OBJECT_ID_MAX_LEN = 64;
 
         /*
         * This struct is not interpreted by the hash tree, it's up to the user of
@@ -64,6 +64,32 @@ namespace crack
             uint8_t tag[TEE_FS_HTREE_TAG_SIZE];
             uint16_t flags;
         };
+
+        typedef struct
+        {
+            uint32_t timeLow;
+            uint16_t timeMid;
+            uint16_t timeHiAndVersion;
+            uint8_t clockSeqAndNode[8];
+        } TEE_UUID;
+
+        //索引数据块为 dirfile_entry
+        struct dirfile_entry
+        {
+            TEE_UUID uuid;
+            uint8_t oid[TEE_OBJECT_ID_MAX_LEN];
+            uint32_t oidlen;
+            //hash树ID数组，索引ID
+            uint8_t hash[TEE_FS_HTREE_HASH_SIZE];
+            uint32_t file_number;
+        };
+
+       
+
+        /* 智能指针设置 */
+        using TEE_FS_HTREE_IMAGE_PTR = std::unique_ptr<tee_fs_htree_image>;
+        using TEE_FS_HTREE_NODE_IMAGE_PTR = std::unique_ptr<tee_fs_htree_node_image>;
+        using TEE_FS_HTREE_IMETA_PTR = std::unique_ptr<tee_fs_htree_imeta>;
 
     } // namespace tee_fs_htree
 } // namespace crack

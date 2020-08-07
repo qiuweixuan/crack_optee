@@ -7,7 +7,6 @@
 #include <assert.h>
 #include <unistd.h>
 
-
 using namespace crack::read_fs;
 using namespace crack::tee_fs_htree;
 
@@ -114,25 +113,102 @@ TEE_FS_HTREE_IMAGE_PTR crack::read_fs::read_htree_image(int fd, uint8_t vers)
     uint32_t offs;
     uint32_t size;
     uint32_t idx = 0;
-    
 
     int res = get_offs_size(tee_fs_htree_type::TEE_FS_HTREE_TYPE_HEAD, idx, vers, offs, size);
-    if (res < 0 )
+    if (res < 0)
     {
         printf("get idx:%d , vers:%d TEE_FS_HTREE_TYPE_HEAD offs_size error!\n", idx, vers);
         return nullptr;
     }
+    else{
+        printf("get idx:%d , vers:%d TEE_FS_HTREE_TYPE_HEAD , offs:%d, size: %d \n", idx, vers,offs,size);
+    }
     // 创建对象
     TEE_FS_HTREE_IMAGE_PTR htree_image_ptr = std::make_unique<tee_fs_htree_image>();
     // 设置偏移量
-    lseek(fd,SEEK_CUR,offs);
+    lseek(fd,offs,SEEK_SET);
+
     // 读取数据
-    res = read(fd,htree_image_ptr.get(),size);
-     if (res < 0 )
+    res = read(fd, htree_image_ptr.get(), size);
+
+    printf("ENC FEK: ");
+    for (size_t i = 0; i < sizeof(htree_image_ptr->enc_fek); i++)
+    {
+        printf(" %0x ", htree_image_ptr->enc_fek[i]);
+    }
+    printf("\n");
+
+    if (res < 0)
     {
         printf("read idx:%d , vers:%d TEE_FS_HTREE_TYPE_HEAD error!\n", idx, vers);
         return nullptr;
     }
 
     return htree_image_ptr;
+}
+crack::tee_fs_htree::TEE_FS_HTREE_NODE_IMAGE_PTR crack::read_fs::read_htree_node_image(int fd, uint32_t idx, uint8_t vers)
+{
+    uint32_t offs;
+    uint32_t size;
+
+    int res = get_offs_size(tee_fs_htree_type::TEE_FS_HTREE_TYPE_NODE, idx, vers, offs, size);
+    if (res < 0)
+    {
+        printf("get idx:%d , vers:%d TEE_FS_HTREE_TYPE_NODE offs_size error!\n", idx, vers);
+        return nullptr;
+    }
+    // 创建对象
+    TEE_FS_HTREE_NODE_IMAGE_PTR htree_node_image_ptr = std::make_unique<tee_fs_htree_node_image>();
+    // 设置偏移量
+    lseek(fd,offs,SEEK_SET);
+    // 读取数据
+    res = read(fd, htree_node_image_ptr.get(), size);
+    if (res < 0)
+    {
+        printf("read idx:%d , vers:%d TEE_FS_HTREE_TYPE_NODE error!\n", idx, vers);
+        return nullptr;
+    }
+    else{
+         printf("read idx:%d , vers:%d TEE_FS_HTREE_TYPE_NODE , offs:%d, size: %d\n", idx, vers, offs ,size);
+    }
+
+    return htree_node_image_ptr;
+}
+
+
+static int crack::read_fs::get_idx_from_counter(uint32_t counter0, uint32_t counter1)
+{
+	if (!(counter0 & 1)) {
+		if (!(counter1 & 1))
+			return 0;
+		if (counter0 > counter1)
+			return 0;
+		else
+			return 1;
+	}
+
+	if (counter1 & 1)
+		return 1;
+	else 
+		return -1;
+}
+
+
+crack::tee_fs_htree::TEE_FS_HTREE_IMAGE_PTR crack::read_fs::get_dirfdb_htree_image(int fd,int& vers){
+     // 读取第一个htree_image
+    auto htree_image_ptr_0 = crack::read_fs::read_htree_image(fd,0);
+    // 读取第二个htree_image
+    auto htree_image_ptr_1 = crack::read_fs::read_htree_image(fd,1);
+
+    // 判断是否有错误
+    if(!htree_image_ptr_0 || !htree_image_ptr_1){
+        return nullptr;
+    }
+
+    // 获取版本vers
+    vers = crack::read_fs::get_idx_from_counter(htree_image_ptr_0->counter, htree_image_ptr_1->counter);
+
+    printf("vers: %d \n",vers);
+
+    return vers == 0? std::move(htree_image_ptr_0) : std::move(htree_image_ptr_1);
 }

@@ -2,11 +2,13 @@
 #include "generate_key.h"
 #include "print_fs.h"
 #include "read_fs.h"
+#include "crypt_alg.h"
 
 #include <string>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <vector>
 
 /**
  * @brief 恢复索引文件内容
@@ -23,7 +25,6 @@ void crack::crack_fs::crack_dirfdb(std::string& storage_dir, crack::tee_key::tee
     // 初始化TSK
     crack::tee_key::tee_fs_tsk tee_fs_tsk;
     crack::generate_key::tee_fs_init_tsk(tee_fs_tsk,tee_fs_ssk,dirfdb_uuid);
-    // 打印相关信息
     crack::print_fs::print_tsk(tee_fs_tsk);
 
     // 打开文件
@@ -35,7 +36,7 @@ void crack::crack_fs::crack_dirfdb(std::string& storage_dir, crack::tee_key::tee
 
     // 获取索引文件头部
     int vers;
-    auto htree_image_ptr = crack::crack_fs::get_dirfdb_htree_image(fd,vers);
+    auto htree_image_ptr = crack::read_fs::get_dirfdb_htree_image(fd,vers);
     // 错误处理
     if(!htree_image_ptr){
         printf("get_dirfdb_htree_image error!");
@@ -43,55 +44,78 @@ void crack::crack_fs::crack_dirfdb(std::string& storage_dir, crack::tee_key::tee
         close(fd);
         return;
     }
+    // 读取根节点
+    uint32_t idx = 0;
+    auto htree_node_image_root_ptr  =  crack::read_fs::read_htree_node_image(fd, idx , vers);
 
-    // 初始化TSK
+    // 初始化FEK
     crack::tee_key::tee_fs_fek tee_fs_fek;
+    crack::print_fs::print_array_hex("ENC FEK: ",htree_image_ptr->enc_fek,sizeof(htree_image_ptr->enc_fek));
     crack::generate_key::tee_fs_init_fek(tee_fs_fek, tee_fs_tsk, *htree_image_ptr);
-    // 打印相关信息
     crack::print_fs::print_fek(tee_fs_fek);
 
+    // 解密元数据
+    crack::print_fs::print_array_hex("ENC imeta: ",htree_image_ptr->imeta,sizeof(htree_image_ptr->imeta));
+    auto imeta_ptr = crack::crack_fs::decrypt_imeta(tee_fs_fek,*htree_image_ptr,*htree_node_image_root_ptr);
+    crack::print_fs::print_imeta(*imeta_ptr);
 
-   
-    
+    // 计算node_image个数
 
+
+    // 存储node_image_ptr
+    std::vector<crack::tee_fs_htree::TEE_FS_HTREE_NODE_IMAGE_PTR> node_image_ptr_vec;
+    node_image_ptr_vec.emplace_back(std::move(htree_node_image_root_ptr));
 
     // 关闭文件
     close(fd);
 }
 
 
-static int crack::crack_fs::get_idx_from_counter(uint32_t counter0, uint32_t counter1)
-{
-	if (!(counter0 & 1)) {
-		if (!(counter1 & 1))
-			return 0;
-		if (counter0 > counter1)
-			return 0;
-		else
-			return 1;
-	}
 
-	if (counter1 & 1)
-		return 1;
-	else 
-		return -1;
-}
 
-static crack::read_fs::TEE_FS_HTREE_IMAGE_PTR crack::crack_fs::get_dirfdb_htree_image(int fd,int& vers){
-     // 读取第一个htree_image
-    auto htree_image_ptr_0 = crack::read_fs::read_htree_image(fd,0);
-    // 读取第二个htree_image
-    auto htree_image_ptr_1 = crack::read_fs::read_htree_image(fd,1);
 
-    // 判断是否有错误
-    if(!htree_image_ptr_0 || !htree_image_ptr_1){
-        return nullptr;
-    }
 
-    // 获取版本vers
-    vers = crack::crack_fs::get_idx_from_counter(htree_image_ptr_0->counter,
-    htree_image_ptr_1->counter);
-    printf("vers: %d \n",vers);
+static crack::tee_fs_htree::TEE_FS_HTREE_IMETA_PTR  crack::crack_fs::decrypt_imeta(crack::tee_key::tee_fs_fek& fek, crack::tee_fs_htree::tee_fs_htree_image& image,crack::tee_fs_htree::tee_fs_htree_node_image& node_image){
+   
+   
+    // 密文
+    uint8_t* gcm_ct = image.imeta;
+    uint32_t gcm_ct_len = sizeof(image.imeta);
 
-    return vers == 0? std::move(htree_image_ptr_0) : std::move(htree_image_ptr_1);
+    // 密钥
+    uint8_t* gcm_key = fek.key;
+    uint32_t gcm_key_len = sizeof(fek.key) * 8;
+
+    // 初试话向量
+    uint8_t* gcm_iv = image.iv;
+    uint32_t gcm_iv_len = sizeof(image.iv);
+
+    // 认证数据
+    std::string aad((char*)node_image.hash,sizeof(node_image.hash));
+    aad.append(std::string((char*)&image.counter,sizeof(image.counter)));
+    aad.append(std::string((char*)image.enc_fek,sizeof(image.enc_fek)));
+    aad.append(std::string((char*)image.iv,sizeof(image.iv)));
+
+    uint8_t* gcm_aad = (uint8_t*)&aad[0];
+    uint32_t gcm_aad_len = aad.size();
+
+    // 认证标签
+    uint8_t* gcm_tag = image.tag;
+    uint32_t gcm_tag_len = sizeof(image.tag);
+
+
+    // 解密元数据
+    crack::tee_fs_htree::TEE_FS_HTREE_IMETA_PTR  imeta_ptr = std::make_unique<crack::tee_fs_htree::tee_fs_htree_imeta>();
+    uint8_t* gcm_pt = (uint8_t* )imeta_ptr.get();
+    uint32_t gcm_pt_len = sizeof(crack::tee_fs_htree::tee_fs_htree_imeta);
+
+    // 进行解密操作
+    crack::crypt_alg::aes_gcm_decrypt(gcm_pt,gcm_pt_len,
+						 gcm_ct,gcm_ct_len,
+						 gcm_key,gcm_key_len,
+						 gcm_iv, gcm_iv_len,
+						 gcm_aad, gcm_aad_len,
+						gcm_tag, gcm_tag_len);
+
+    return std::move(imeta_ptr);
 }

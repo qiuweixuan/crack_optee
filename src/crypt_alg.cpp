@@ -1,6 +1,10 @@
 #include "crypt_alg.h"
+
 #include <openssl/hmac.h>
 #include <openssl/aes.h>
+#include <openssl/bio.h>
+#include <openssl/evp.h>
+
 #include <string>
 #include <memory.h>
 
@@ -120,3 +124,64 @@ int crack::crypt_alg::aes_ecb_decrypt(uint8_t *out, const uint8_t *userKey, cons
 	}
 	return 0;
 }
+
+
+/**
+ *@brief AES算法的GCM模式解密算法实现
+ *@param gcm_pt 解密后的数据
+ *@param gcm_ct 要解密的数据
+ *@param gcm_key 密钥
+ *@param gcm_key_len 密钥长度，决定GCM模式
+ *@param gcm_iv 初始化向量
+ *@param gcm_aad 附加数据
+ *@param gcm_tag 认证标签
+ */
+void crack::crypt_alg::aes_gcm_decrypt(uint8_t* gcm_pt,uint32_t gcm_pt_len,
+						 uint8_t* gcm_ct,uint32_t gcm_ct_len,
+						 uint8_t* gcm_key,uint32_t gcm_key_len,
+						 uint8_t* gcm_iv, uint32_t gcm_iv_len,
+						 uint8_t* gcm_aad, uint32_t gcm_aad_len,
+						 uint8_t* gcm_tag, uint32_t gcm_tag_len)
+{
+        EVP_CIPHER_CTX *ctx;
+        int outlen, tmplen, rv;
+        unsigned char outbuf[1024];
+        
+        ctx = EVP_CIPHER_CTX_new();
+        /* Select cipher */
+		if(gcm_key_len == 128){
+			EVP_DecryptInit_ex(ctx, EVP_aes_128_gcm(), NULL, NULL, NULL);
+		}
+		else if(gcm_key_len == 256){
+			EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, NULL, NULL);
+		}
+		else{
+			printf("key size : %d error \n",gcm_key_len);
+			return;
+		}
+        
+        /* Set IV length, omit for 96 bits */
+        EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, gcm_iv_len, NULL);
+        /* Specify key and IV */
+        EVP_DecryptInit_ex(ctx, NULL, NULL, gcm_key, gcm_iv);
+
+        /* Zero or more calls to specify any AAD */
+        EVP_DecryptUpdate(ctx, NULL, &outlen, gcm_aad, gcm_aad_len);
+        /* Decrypt plaintext */
+        EVP_DecryptUpdate(ctx, outbuf, &outlen, gcm_ct, sizeof(gcm_ct));
+        /* Output decrypted block */
+        
+
+        /* Set expected tag value. Works in OpenSSL 1.0.1d and later */
+        EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, gcm_tag_len, gcm_tag);
+        /* Finalise: note get no output for GCM */
+        rv = EVP_DecryptFinal_ex(ctx, outbuf, &outlen);
+        /* Print out return value. If this is not successful authentication
+         * failed and plaintext is not trustworthy.
+         */
+        // printf("Tag Verify %s\n", rv > 0 ? "Successful!" : "Failed!");
+        EVP_CIPHER_CTX_free(ctx);
+
+		/* copy data to pt */
+		memcpy(gcm_pt,outbuf,gcm_pt_len);
+ }

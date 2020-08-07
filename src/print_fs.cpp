@@ -1,5 +1,8 @@
 #include "print_fs.h"
+#include "tee_fs_htree.h"
+
 #include <cstdio>
+#include <iostream>
 
 
 void crack::print_fs::print_huk(const crack::tee_key::tee_hw_unique_key& huk) {
@@ -43,6 +46,19 @@ void crack::print_fs::print_fek(const crack::tee_key::tee_fs_fek& tee_fs_fek) {
     for (size_t i = 0; i < sizeof(tee_fs_fek.key); i++)
     {
         printf(" %0x ", tee_fs_fek.key[i]);
+    }
+    printf("\n");
+}
+
+void crack::print_fs::print_imeta(const crack::tee_fs_htree::tee_fs_htree_imeta & imeta) {
+    std::cout<< "length: " << imeta.meta.length << std::endl;
+}
+
+void crack::print_fs::print_array_hex(std::string pre_str,uint8_t* array, uint32_t len) {
+    printf("%s",pre_str.c_str());
+    for (size_t i = 0; i < len; i++)
+    {
+        printf(" %0x ", array[i]);
     }
     printf("\n");
 }
