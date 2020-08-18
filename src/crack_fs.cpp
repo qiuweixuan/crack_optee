@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <vector>
+#include <iostream>
 
 /**
  * @brief 恢复索引文件内容
@@ -57,14 +58,28 @@ void crack::crack_fs::crack_dirfdb(std::string& storage_dir, crack::tee_key::tee
     // 解密元数据
     crack::print_fs::print_array_hex("ENC imeta: ",htree_image_ptr->imeta,sizeof(htree_image_ptr->imeta));
     auto imeta_ptr = crack::crack_fs::decrypt_imeta(tee_fs_fek,*htree_image_ptr,*htree_node_image_root_ptr);
-    crack::print_fs::print_imeta(*imeta_ptr);
+    
 
-    // 计算node_image个数
+    crack::print_fs::print_imeta(*imeta_ptr);
+    // crack::print_fs::print_array_hex("imeta: ",(uint8_t*)imeta_ptr.get(),sizeof(crack::tee_fs_htree::tee_fs_htree_imeta));
+
+    // 计算 node_image | dirfile_entry 个数
+    uint32_t node_image_cnt =  imeta_ptr->meta.length / 4096;
+    if(imeta_ptr->meta.length % 4096){
+        node_image_cnt++;
+    }
+    std::cout<<"node_image_cnt : "<<  node_image_cnt << std::endl;
+    uint32_t dirfile_entry_cnt =  crack::read_fs::get_dirfile_entry_cnt(*imeta_ptr);
+    std::cout<<"dirfile_entry_cnt : "<< dirfile_entry_cnt << std::endl;
+
 
 
     // 存储node_image_ptr
     std::vector<crack::tee_fs_htree::TEE_FS_HTREE_NODE_IMAGE_PTR> node_image_ptr_vec;
     node_image_ptr_vec.emplace_back(std::move(htree_node_image_root_ptr));
+
+    // 读取一系列node_image
+    crack::read_fs::get_node_images(fd,node_image_ptr_vec,node_image_cnt);
 
     // 关闭文件
     close(fd);

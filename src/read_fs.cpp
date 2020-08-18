@@ -6,6 +6,7 @@
 #include <iostream>
 #include <assert.h>
 #include <unistd.h>
+#include <stdint.h>
 
 using namespace crack::read_fs;
 using namespace crack::tee_fs_htree;
@@ -211,4 +212,24 @@ crack::tee_fs_htree::TEE_FS_HTREE_IMAGE_PTR crack::read_fs::get_dirfdb_htree_ima
     printf("vers: %d \n",vers);
 
     return vers == 0? std::move(htree_image_ptr_0) : std::move(htree_image_ptr_1);
+}
+
+uint32_t crack::read_fs::get_dirfile_entry_cnt(crack::tee_fs_htree::tee_fs_htree_imeta& imeta){
+    return imeta.meta.length / sizeof(crack::tee_fs_htree::dirfile_entry);
+}
+
+void crack::read_fs::get_node_images(int fd, std::vector<crack::tee_fs_htree::TEE_FS_HTREE_NODE_IMAGE_PTR>& node_image_ptr_vec ,uint32_t node_image_cnt){
+    
+    for (uint32_t node_id = 2; node_id <= node_image_cnt; node_id++)
+    {
+        uint32_t p = node_id / 2 - 1;
+        auto&& p_node = node_image_ptr_vec[p];
+
+        uint8_t committed_version = !!(p_node->flags &
+				   (1 << (1 + (node_id & 1) )) );
+
+        auto node_image_ptr = crack::read_fs::read_htree_node_image(fd,node_id - 1,committed_version);
+        
+        node_image_ptr_vec.emplace_back(std::move(node_image_ptr));
+    }
 }

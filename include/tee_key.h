@@ -58,8 +58,6 @@ namespace crack
             uint8_t key[TEE_FS_KM_FEK_SIZE];
         };
 
-    
-
 
     } // namespace tee_key
 } // namespace crack

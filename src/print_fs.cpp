@@ -58,7 +58,7 @@ void crack::print_fs::print_array_hex(std::string pre_str,uint8_t* array, uint32
     printf("%s",pre_str.c_str());
     for (size_t i = 0; i < len; i++)
     {
-        printf(" %0x ", array[i]);
+        printf(" %02x ", array[i]);
     }
     printf("\n");
 }

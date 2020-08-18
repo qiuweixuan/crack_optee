@@ -23,14 +23,5 @@ int main(int argc,char** argv){
 	std::string storage_path(argv[1]);
 	crack::crack_fs::crack_dirfdb(storage_path, *tee_fs_ssk);
 
-	
-	
-	
-	
-
-	
-
-	
-
     return 0;
 }
