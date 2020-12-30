@@ -1,5 +1,7 @@
 #include "read_fs.h"
 #include "tee_fs_htree.h"
+#include "tee_key.h"
+#include "crack_fs.h"
 
 #include <climits>
 #include <cstdlib>
@@ -10,6 +12,7 @@
 
 using namespace crack::read_fs;
 using namespace crack::tee_fs_htree;
+using namespace crack::tee_key;
 
 std::string crack::read_fs::path_join(std::string &dir_path, std::string file_name)
 {
@@ -132,12 +135,6 @@ TEE_FS_HTREE_IMAGE_PTR crack::read_fs::read_htree_image(int fd, uint8_t vers)
     // 读取数据
     res = read(fd, htree_image_ptr.get(), size);
 
-    printf("ENC FEK: ");
-    for (size_t i = 0; i < sizeof(htree_image_ptr->enc_fek); i++)
-    {
-        printf(" %0x ", htree_image_ptr->enc_fek[i]);
-    }
-    printf("\n");
 
     if (res < 0)
     {
@@ -175,6 +172,36 @@ crack::tee_fs_htree::TEE_FS_HTREE_NODE_IMAGE_PTR crack::read_fs::read_htree_node
 
     return htree_node_image_ptr;
 }
+
+crack::tee_fs_htree::TEE_FS_DATA_BLOCK_PTR crack::read_fs::read_data_block(int fd, uint32_t idx, uint8_t vers)
+{
+    uint32_t offs;
+    uint32_t size;
+
+    int res = get_offs_size(tee_fs_htree_type::TEE_FS_HTREE_TYPE_BLOCK, idx, vers, offs, size);
+    if (res < 0)
+    {
+        printf("get idx:%d , vers:%d TEE_FS_HTREE_TYPE_BLOCK offs_size error!\n", idx, vers);
+        return nullptr;
+    }
+    // 创建对象
+    TEE_FS_DATA_BLOCK_PTR data_block_ptr = std::make_unique<tee_fs_data_block>();
+    // 设置偏移量
+    lseek(fd,offs,SEEK_SET);
+    // 读取数据
+    res = read(fd, data_block_ptr->block, size);
+    if (res < 0)
+    {
+        printf("read idx:%d , vers:%d TEE_FS_HTREE_TYPE_BLOCK error!\n", idx, vers);
+        return nullptr;
+    }
+    else{
+         printf("read idx:%d , vers:%d TEE_FS_HTREE_TYPE_BLOCK , offs:%d, size: %d\n", idx, vers, offs ,size);
+    }
+
+    return data_block_ptr;
+}
+
 
 
 static int crack::read_fs::get_idx_from_counter(uint32_t counter0, uint32_t counter1)
@@ -231,5 +258,35 @@ void crack::read_fs::get_node_images(int fd, std::vector<crack::tee_fs_htree::TE
         auto node_image_ptr = crack::read_fs::read_htree_node_image(fd,node_id - 1,committed_version);
         
         node_image_ptr_vec.emplace_back(std::move(node_image_ptr));
+    }
+}
+
+void crack::read_fs::save_data_blocks(int fd, int recover_fd,tee_fs_fek &fek,tee_fs_htree_image& image,std::vector<TEE_FS_HTREE_NODE_IMAGE_PTR>& node_image_ptr_vec ){
+    // 设置恢复文件偏移量
+    // lseek(recover_fd,0,SEEK_SET);
+
+    // 循环读取块
+    for (uint32_t block_num = 0; block_num <  node_image_ptr_vec.size(); block_num++)
+    {
+        // 获取node_image
+        auto&& node = node_image_ptr_vec[block_num];
+
+        // 获取块版本
+        uint8_t block_vers = !!(node->flags & (1 << 0));
+
+        // 读取块
+        auto data_block_ptr = crack::read_fs::read_data_block(fd,block_num,block_vers);
+
+        // 解密数据块
+        crack::crack_fs::decrypt_data_block(fek,image,*node,*data_block_ptr);
+
+        // 写数据
+        int res = write(recover_fd, data_block_ptr->block, sizeof(data_block_ptr->block));
+        if (res < 0)
+        {
+            printf("write idx:%d , vers:%d TEE_FS_HTREE_TYPE_BLOCK error!\n", block_num, block_vers);
+            return ;
+        }
+
     }
 }

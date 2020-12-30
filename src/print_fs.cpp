@@ -52,6 +52,7 @@ void crack::print_fs::print_fek(const crack::tee_key::tee_fs_fek& tee_fs_fek) {
 
 void crack::print_fs::print_imeta(const crack::tee_fs_htree::tee_fs_htree_imeta & imeta) {
     std::cout<< "length: " << imeta.meta.length << std::endl;
+    std::cout<< "max_node_id: " << imeta.max_node_id << std::endl;
 }
 
 void crack::print_fs::print_array_hex(std::string pre_str,uint8_t* array, uint32_t len) {

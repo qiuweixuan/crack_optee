@@ -5,17 +5,24 @@
 #include <memory>
 #include <vector>
 #include "tee_fs_htree.h"
+#include "tee_key.h"
 
 
 namespace crack
 {
     namespace read_fs
     {
+        using namespace crack::tee_key;
+        using namespace tee_fs_htree;
+
+
         std::string path_join(std::string& dir_path,std::string file_name);
 
         crack::tee_fs_htree::TEE_FS_HTREE_IMAGE_PTR read_htree_image(int fd, uint8_t vers);
 
         crack::tee_fs_htree::TEE_FS_HTREE_NODE_IMAGE_PTR read_htree_node_image(int fd, uint32_t idx,uint8_t vers);
+
+        crack::tee_fs_htree::TEE_FS_DATA_BLOCK_PTR read_data_block(int fd, uint32_t idx, uint8_t vers);
 
         crack::tee_fs_htree::TEE_FS_HTREE_IMAGE_PTR get_dirfdb_htree_image(int fd,int& vers);
 
@@ -28,7 +35,7 @@ namespace crack
 
         void get_node_images(int fd,std::vector<crack::tee_fs_htree::TEE_FS_HTREE_NODE_IMAGE_PTR>& node_image_ptr_vec,uint32_t node_image_cnt);
 
-
+        void save_data_blocks(int fd, int recover_fd,tee_fs_fek &fek,tee_fs_htree_image& image,std::vector<TEE_FS_HTREE_NODE_IMAGE_PTR>& node_image_ptr_vec );
     }
 } // namespace crack
 

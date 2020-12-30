@@ -146,7 +146,7 @@ void crack::crypt_alg::aes_gcm_decrypt(uint8_t* gcm_pt,uint32_t gcm_pt_len,
 {
         EVP_CIPHER_CTX *ctx;
         int outlen, tmplen, rv;
-        unsigned char outbuf[1024];
+        unsigned char outbuf[gcm_ct_len];
 
         ctx = EVP_CIPHER_CTX_new();
         /* Select cipher */
@@ -164,13 +164,15 @@ void crack::crypt_alg::aes_gcm_decrypt(uint8_t* gcm_pt,uint32_t gcm_pt_len,
         
         /* Set IV length, omit for 96 bits */
         EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_IVLEN, gcm_iv_len, NULL);
+		printf("iv size : %d \n",gcm_iv_len);
+
         /* Specify key and IV */
         EVP_DecryptInit_ex(ctx, NULL, NULL, gcm_key, gcm_iv);
 
         /* Zero or more calls to specify any AAD */
         EVP_DecryptUpdate(ctx, NULL, &outlen, gcm_aad, gcm_aad_len);
         /* Decrypt plaintext */
-        EVP_DecryptUpdate(ctx, outbuf, &outlen, gcm_ct, sizeof(gcm_ct));
+        EVP_DecryptUpdate(ctx, outbuf, &outlen, gcm_ct, gcm_ct_len);
         
         
 

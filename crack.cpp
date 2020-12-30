@@ -21,6 +21,8 @@ int main(int argc,char** argv){
 
 	// 2.构建索引文件的TSK
 	std::string storage_path(argv[1]);
+
+	// 3.破解索引文件
 	crack::crack_fs::crack_dirfdb(storage_path, *tee_fs_ssk);
 
     return 0;
