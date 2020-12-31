@@ -20,6 +20,8 @@ namespace crack
         void print_fek(const crack::tee_key::tee_fs_fek& tee_fs_fek);
 
         void print_imeta(const crack::tee_fs_htree::tee_fs_htree_imeta & imeta);
+    
+        void print_dirfile_entry(const crack::tee_fs_htree::dirfile_entry & entry);
 
         void print_array_hex(std::string pre_str,uint8_t* array, uint32_t len);
     }

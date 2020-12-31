@@ -98,6 +98,7 @@ namespace crack
         using TEE_FS_HTREE_NODE_IMAGE_PTR = std::unique_ptr<tee_fs_htree_node_image>;
         using TEE_FS_HTREE_IMETA_PTR = std::unique_ptr<tee_fs_htree_imeta>;
         using TEE_FS_DATA_BLOCK_PTR = std::unique_ptr<tee_fs_data_block>;
+        using DIRFILE_ENTRY_PTR = std::unique_ptr<dirfile_entry>;
 
 
     } // namespace tee_fs_htree

@@ -59,7 +59,21 @@ void crack::print_fs::print_array_hex(std::string pre_str,uint8_t* array, uint32
     printf("%s",pre_str.c_str());
     for (size_t i = 0; i < len; i++)
     {
-        printf(" %02x ", array[i]);
+        printf("%02x", array[i]);
     }
     printf("\n");
+}
+
+void crack::print_fs::print_dirfile_entry(const crack::tee_fs_htree::dirfile_entry & entry){
+    printf("dirfile_entry: \n");
+    printf("UUID: %08x-%04x-%04x-",entry.uuid.timeLow,entry.uuid.timeMid,entry.uuid.timeHiAndVersion);
+    crack::print_fs::print_array_hex("",(uint8_t*)entry.uuid.clockSeqAndNode,sizeof(entry.uuid.clockSeqAndNode));
+    printf("oid:");
+    for (uint32_t i = 0; i < entry.oidlen; i++)
+    {
+        printf("%c", entry.oid[i]);
+    }
+    printf("\n");
+    crack::print_fs::print_array_hex("hash:",(uint8_t*)entry.hash,sizeof(entry.hash));
+    printf("file_number: %x\n",entry.file_number);
 }

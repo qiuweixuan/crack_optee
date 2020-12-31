@@ -12,7 +12,10 @@ namespace crack
     {
         using namespace crack::tee_key;
         using namespace crack::tee_fs_htree;
-        void crack_dirfdb(std::string& storage_dir, crack::tee_key::tee_fs_ssk& tee_fs_ssk);
+        
+        uint32_t crack_dirfdb(std::string& storage_dir, std::string &recover_save_dir,crack::tee_key::tee_fs_ssk& tee_fs_ssk);
+
+        void crack_all_datafiles(std::string& storage_dir, std::string &recover_save_dir,crack::tee_key::tee_fs_ssk& tee_fs_ssk,uint32_t dirfile_entry_cnt);
 
         crack::tee_fs_htree::TEE_FS_HTREE_IMETA_PTR  decrypt_imeta(crack::tee_key::tee_fs_fek& fek, crack::tee_fs_htree::tee_fs_htree_image& image,crack::tee_fs_htree::tee_fs_htree_node_image& node_image);
    

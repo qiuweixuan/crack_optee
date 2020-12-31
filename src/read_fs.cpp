@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <cstring>
 
 using namespace crack::read_fs;
 using namespace crack::tee_fs_htree;
@@ -221,7 +222,7 @@ static int crack::read_fs::get_idx_from_counter(uint32_t counter0, uint32_t coun
 		return -1;
 }
 
-
+// 获取索引文件头部
 crack::tee_fs_htree::TEE_FS_HTREE_IMAGE_PTR crack::read_fs::get_dirfdb_htree_image(int fd,int& vers){
      // 读取第一个htree_image
     auto htree_image_ptr_0 = crack::read_fs::read_htree_image(fd,0);
@@ -240,6 +241,41 @@ crack::tee_fs_htree::TEE_FS_HTREE_IMAGE_PTR crack::read_fs::get_dirfdb_htree_ima
 
     return vers == 0? std::move(htree_image_ptr_0) : std::move(htree_image_ptr_1);
 }
+
+// 获取数据文件头部
+crack::tee_fs_htree::TEE_FS_HTREE_IMAGE_PTR crack::read_fs::get_datafile_htree_image(int fd,int& vers, crack::tee_fs_htree::dirfile_entry& entry){
+     // 读取第一个htree_image
+    auto htree_image_ptr_0 = crack::read_fs::read_htree_image(fd,0);
+    // 读取第二个htree_image
+    auto htree_image_ptr_1 = crack::read_fs::read_htree_image(fd,1);
+
+    // 读取第一个node_image
+    auto node_image_ptr_0 = crack::read_fs::read_htree_node_image(fd,0,0);
+
+    // 读取第二个node_image
+    auto node_image_ptr_1 = crack::read_fs::read_htree_node_image(fd,0,1);
+
+    // 判断是否有错误
+    if(!htree_image_ptr_0 || !htree_image_ptr_1 || !node_image_ptr_0 || !node_image_ptr_1 ) {
+        return nullptr;
+    }
+
+    if(!memcmp(node_image_ptr_0->hash , entry.hash, sizeof(node_image_ptr_0->hash)))
+    {
+        vers = 0;
+        return std::move(htree_image_ptr_0);
+    }
+    else if(!memcmp(node_image_ptr_1->hash , entry.hash, sizeof(node_image_ptr_1->hash))) 
+    {
+        vers = 1;
+        return std::move(htree_image_ptr_1);
+    }
+    else {
+        vers = -1;
+        return nullptr;
+    }
+}
+
 
 uint32_t crack::read_fs::get_dirfile_entry_cnt(crack::tee_fs_htree::tee_fs_htree_imeta& imeta){
     return imeta.meta.length / sizeof(crack::tee_fs_htree::dirfile_entry);
@@ -261,9 +297,24 @@ void crack::read_fs::get_node_images(int fd, std::vector<crack::tee_fs_htree::TE
     }
 }
 
+void crack::read_fs::get_dirfile_entrys(int recover_fd, std::vector<crack::tee_fs_htree::DIRFILE_ENTRY_PTR>& dirfile_entry_ptr_vec ,uint32_t dirfile_entry_cnt){
+    lseek(recover_fd,0,SEEK_SET);
+    for (uint32_t id = 0; id < dirfile_entry_cnt; id++)
+    {
+        DIRFILE_ENTRY_PTR element = std::make_unique<dirfile_entry>();
+        int res = read(recover_fd, element.get(), sizeof(dirfile_entry));
+        if (res < 0)
+        {
+            printf("read idx:%d DIRFILE_ENTRY error!\n",id);
+            return ;
+        }
+        dirfile_entry_ptr_vec.emplace_back(std::move(element));
+    }
+}
+
 void crack::read_fs::save_data_blocks(int fd, int recover_fd,tee_fs_fek &fek,tee_fs_htree_image& image,std::vector<TEE_FS_HTREE_NODE_IMAGE_PTR>& node_image_ptr_vec ){
     // 设置恢复文件偏移量
-    // lseek(recover_fd,0,SEEK_SET);
+    lseek(recover_fd,0,SEEK_SET);
 
     // 循环读取块
     for (uint32_t block_num = 0; block_num <  node_image_ptr_vec.size(); block_num++)
