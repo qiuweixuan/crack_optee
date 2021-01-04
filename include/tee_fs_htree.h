@@ -91,6 +91,17 @@ namespace crack
         };
 
 
+        /* Header of GP formated secure storage files */
+        struct tee_svc_storage_head {
+            uint32_t attr_size;
+            uint32_t keySize;
+            uint32_t maxKeySize;
+            uint32_t objectUsage;
+            uint32_t objectType;
+            uint32_t have_attrs;
+        };
+
+
        
 
         /* 智能指针设置 */

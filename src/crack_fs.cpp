@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <vector>
 #include <iostream>
+#include <cstring>
 
 using namespace crack::tee_key;
 using namespace crack::tee_fs_htree;
@@ -113,8 +114,8 @@ uint32_t crack::crack_fs::crack_dirfdb(std::string &storage_dir, std::string &re
     }
 
     // 关闭文件
-    close(recover_fd);
     close(fd);
+    close(recover_fd);
 
     return dirfile_entry_cnt;
 }
@@ -145,8 +146,11 @@ void crack::crack_fs::crack_all_datafiles(std::string& storage_dir, std::string 
     // 遍历索引文件，进行全部索引文件破解
     for (auto&& entry : dirfile_entrys)
     {
-        // 破解单个数据文件
-         
+        // 破解单个数据文件(除了ta.db)
+        if(memcmp((const char*) entry->oid,"ta.db",entry->oidlen) == 0){
+            continue;
+        }
+
         // 获取数据文件路径
         char fname[100];
         int flen = snprintf(fname, 100, "%x", entry->file_number );
@@ -218,7 +222,8 @@ void crack::crack_fs::crack_all_datafiles(std::string& storage_dir, std::string 
             node_image_cnt++;
         }
         std::cout << "node_image_cnt : " << node_image_cnt << std::endl;
-        std::cout << "data_length : " << imeta_ptr->meta.length << std::endl;
+        uint32_t data_length = imeta_ptr->meta.length - sizeof(crack::tee_fs_htree::tee_svc_storage_head);
+        std::cout << "data_length : " << data_length << std::endl;
 
         // 存储node_image_ptr的数组
         std::vector<crack::tee_fs_htree::TEE_FS_HTREE_NODE_IMAGE_PTR> node_image_ptr_vec;
@@ -229,6 +234,27 @@ void crack::crack_fs::crack_all_datafiles(std::string& storage_dir, std::string 
 
         // 根据node_image读取data_block,并保存到save_fd
         crack::read_fs::save_data_blocks(fd, save_fd , tee_fs_fek, *htree_image_ptr, node_image_ptr_vec);
+
+        // 输出对象信息
+        printf("\nobj:\n");
+        printf("key:\n%s\n", save_file_name.c_str());
+        printf("value: \n");
+        // 设置恢复文件偏移量
+        lseek(save_fd, sizeof(crack::tee_fs_htree::tee_svc_storage_head),SEEK_SET);
+        char buf[101] = {0};
+        while(data_length > 0)
+        {
+            
+            uint32_t len = read(save_fd,buf,100);
+            if(len == 0){
+                break;
+            }
+            buf[len] = '\0';
+            printf("%s",buf);
+            data_length -= len;
+            
+        }
+        printf("\n");
 
 
         // 关闭数据文件
@@ -333,6 +359,6 @@ void crack::crack_fs::decrypt_data_block(tee_fs_fek &fek,tee_fs_htree_image &ima
                                       gcm_aad, gcm_aad_len,
                                       gcm_tag, gcm_tag_len);
 
-    crack::print_fs::print_array_hex("plain: ", gcm_pt, gcm_pt_len);
+    // crack::print_fs::print_array_hex("plain: ", gcm_pt, gcm_pt_len);
 
 }
