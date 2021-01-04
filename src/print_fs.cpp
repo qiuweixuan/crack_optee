@@ -75,5 +75,5 @@ void crack::print_fs::print_dirfile_entry(const crack::tee_fs_htree::dirfile_ent
     }
     printf("\n");
     crack::print_fs::print_array_hex("hash:",(uint8_t*)entry.hash,sizeof(entry.hash));
-    printf("file_number: %x\n",entry.file_number);
+    printf("file_number: %x",entry.file_number);
 }
