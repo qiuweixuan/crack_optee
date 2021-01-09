@@ -8,11 +8,14 @@
 
 #include <string>
 #include <unistd.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <vector>
 #include <iostream>
 #include <cstring>
+
+
 
 using namespace crack::tee_key;
 using namespace crack::tee_fs_htree;
@@ -170,9 +173,18 @@ void crack::crack_fs::crack_all_datafiles(std::string& storage_dir, std::string 
             printf("open file: %s success!\n", file_path.c_str());
         }
 
+        // 创建数据文件保存目录
+        struct stat st = {0};
+        std::string uuid_dir_name = crack::print_fs::tee_uuid_to_octet_string(entry->uuid);
+        std::string uuid_dir_path = crack::read_fs::path_join(recover_save_dir, uuid_dir_name);
+
+        if (stat(uuid_dir_path.c_str(), &st) == -1) {
+            mkdir(uuid_dir_path.c_str(), 0777);
+        }
+
         // 设恢复数据文件路径
         std::string save_file_name((const char*) entry->oid,entry->oidlen);
-        std::string save_file_path = crack::read_fs::path_join(recover_save_dir, save_file_name);
+        std::string save_file_path = crack::read_fs::path_join(uuid_dir_path, save_file_name);
         // 创建恢复数据文件
         int save_fd = open(save_file_path.c_str(), O_RDWR| O_CREAT | O_TRUNC );
         if (save_fd < 0)

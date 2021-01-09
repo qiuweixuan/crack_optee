@@ -24,6 +24,8 @@ namespace crack
         void print_dirfile_entry(const crack::tee_fs_htree::dirfile_entry & entry);
 
         void print_array_hex(std::string pre_str,uint8_t* array, uint32_t len);
+
+        std::string tee_uuid_to_octet_string(const crack::tee_fs_htree::TEE_UUID& uuid);
     }
 } // namespace crack
 

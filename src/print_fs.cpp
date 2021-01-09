@@ -3,7 +3,7 @@
 
 #include <cstdio>
 #include <iostream>
-
+#include <cstring>
 
 void crack::print_fs::print_huk(const crack::tee_key::tee_hw_unique_key& huk) {
     printf("HUK: ");
@@ -76,4 +76,35 @@ void crack::print_fs::print_dirfile_entry(const crack::tee_fs_htree::dirfile_ent
     printf("\n");
     crack::print_fs::print_array_hex("hash:",(uint8_t*)entry.hash,sizeof(entry.hash));
     printf("file_number: %x",entry.file_number);
+}
+
+
+void tee_uuid_to_octets(char *d, const crack::tee_fs_htree::TEE_UUID& s)
+{
+	d[0] = s.timeLow >> 24;
+	d[1] = s.timeLow >> 16;
+	d[2] = s.timeLow >> 8;
+	d[3] = s.timeLow;
+	d[4] = s.timeMid >> 8;
+	d[5] = s.timeMid;
+	d[6] = s.timeHiAndVersion >> 8;
+	d[7] = s.timeHiAndVersion;
+	memcpy(d + 8, s.clockSeqAndNode, sizeof(s.clockSeqAndNode));
+}
+
+
+std::string crack::print_fs::tee_uuid_to_octet_string(const crack::tee_fs_htree::TEE_UUID& uuid)
+{
+    char hexChars[] = "0123456789abcdef";
+	char data[16];
+    tee_uuid_to_octets(data,uuid);
+    std::string result(32,'\0');
+    for (int i = 0; i < 16; ++i)
+	{
+		unsigned char a = (data[i] >> 4) & 0x0f;
+		unsigned char b = data[i] & 0x0f;
+		result[2 * i] = hexChars[a];
+		result[2 * i + 1] = hexChars[b];
+	}
+    return result;
 }
